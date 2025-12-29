@@ -1,14 +1,16 @@
+"""main app file."""
+
 from __future__ import annotations
 
-import asyncio
-from typing import AsyncGenerator, Optional
+from typing import Generator
 
+from backend.app.parser import PDFParser
+from backend.app.stream_explanation import stream_explanation
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from backend.app.docling_utils import extract_page_text
-from backend.app.llm import stream_explanation
+from config.config import LOGGER
 
 app = FastAPI(title="AI PDF Reader API")
 
@@ -21,35 +23,38 @@ app.add_middleware(
 )
 
 
-@app.post("/api/explain-page")
-async def explain_page(
+@app.post(
+    path="/explain-page",
+    status_code=201,
+    summary="Extract page content and provide explanation",
+)
+def explain_page(
     pdf_bytes: UploadFile = File(...),
-    page_image: Optional[UploadFile] = File(None),
-    page_index: int = Form(0),
     prompt: str = Form("help me understand this page"),
     provider: str = Form("mock"),
     model: str = Form(""),
     api_key: str = Form(""),
-    use_docling: bool = Form(True),
 ) -> StreamingResponse:
-    pdf_data = await pdf_bytes.read()
-    image_data = await page_image.read() if page_image else None
+    pdf_data = pdf_bytes.file.read()
+    LOGGER.debug("Received PDF bytes: %d", len(pdf_data))
+    parser = PDFParser()
+    try:
+        extracted_text = parser.parse_document(pdf_data)
+        LOGGER.debug(f"Extracted text length: {len(extracted_text)}")
+        LOGGER.debug(f"Extracted text: {extracted_text}")
+    except Exception as exc:
+        LOGGER.exception(f"Failed to parse PDF page: {exc}")
+        extracted_text = ""
 
-    extracted_text = None
-    if use_docling:
-        extracted_text = extract_page_text(pdf_data, page_index)
-
-    async def event_stream() -> AsyncGenerator[bytes, None]:
-        async for chunk in stream_explanation(
+    def event_stream() -> Generator[bytes, None, None]:
+        for chunk in stream_explanation(
             provider=provider,
             model=model,
             api_key=api_key,
             prompt=prompt,
             extracted_text=extracted_text,
-            image_bytes=image_data,
         ):
             yield f"data: {chunk}\n\n".encode("utf-8")
-            await asyncio.sleep(0)
         yield b"event: done\ndata: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

@@ -8,7 +8,7 @@ A Preview-inspired PDF reader with an AI assistant sidebar. Open any local PDF, 
 - API key tab for OpenAI/Claude/Mistral/Gemini (model-agnostic settings)
 - Default action: "help me understand this page"
 - Backend FastAPI endpoint that streams responses
-- Uses docling if available; falls back to sending the page image
+- Sends only the current page as a single-page PDF
 
 ## Project Structure
 - `backend/`: FastAPI API
@@ -48,20 +48,16 @@ make run_frontend
 ```
 
 ## API
-`POST /api/explain-page`
+`POST /explain-page`
 
 Multipart form fields:
-- `pdf_bytes` (file): full PDF bytes
-- `page_image` (file, optional): PNG snapshot of the page
-- `page_index` (int): zero-based page index
+- `pdf_bytes` (file): single-page PDF bytes
 - `prompt` (string): optional prompt
 - `provider` (string): mock/openai/anthropic/mistral/gemini
 - `model` (string): model name
 - `api_key` (string): provider key
-- `use_docling` (bool): try docling parsing first
 
 The endpoint returns an event-stream (SSE). Each chunk is in `data: ...` lines and terminates with `[DONE]`.
 
 ## Notes
 - `backend/app/llm.py` currently includes a mock provider. Wire your preferred provider there.
-- `docling` is optional but included in the backend requirements. If install issues occur, remove it and rely on page images.

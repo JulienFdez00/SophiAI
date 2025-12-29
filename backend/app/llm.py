@@ -1,39 +1,21 @@
-from __future__ import annotations
+"""LLM setup."""
+import os
 
-import asyncio
-from typing import AsyncGenerator, Optional
+from langchain.chat_models import init_chat_model
+from langchain_core.language_models import BaseChatModel
 
 
-async def stream_explanation(
-    *,
-    provider: str,
-    model: str,
-    api_key: str,
-    prompt: str,
-    extracted_text: Optional[str],
-    image_bytes: Optional[bytes],
-) -> AsyncGenerator[str, None]:
-    if provider != "mock":
-        yield (
-            "Provider adapters are not wired yet. Set provider=mock for now, "
-            "or implement provider-specific calls in backend/app/llm.py."
-        )
-        return
-
-    context_hint = ""
-    if extracted_text:
-        context_hint = f"Using extracted text ({len(extracted_text)} chars)."
-    elif image_bytes:
-        context_hint = f"Using page image ({len(image_bytes)} bytes)."
-    else:
-        context_hint = "No page content received."
-
-    response = (
-        f"{context_hint}\n\nPrompt: {prompt}\n\n"
-        "Mock explanation: This endpoint is ready to stream responses once "
-        "you wire a provider adapter."
+def get_llm(max_tokens: int = 4096) -> BaseChatModel:
+    """Returns an LLM."""
+    # Add Anthropic API key to your env
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    masked = f"{api_key[:4]}...{api_key[-4:]}" if api_key else "missing"
+    from config.config import LOGGER
+    LOGGER.debug(f"ANTHROPIC_API_KEY is {masked}")
+    return init_chat_model(
+        model="claude-sonnet-4-5",
+        max_tokens=max_tokens,
+        timeout=None,
+        max_retries=2,
+        api_key=api_key
     )
-
-    for token in response.split(" "):
-        yield token + " "
-        await asyncio.sleep(0.02)

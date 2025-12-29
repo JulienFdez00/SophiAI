@@ -1,0 +1,7 @@
+"""Prompts."""
+
+TEXT_EXTRACTION_PROMPT = """
+"""
+
+EXPERT_EXPLANATION_PROMPT = """
+"""

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { PDFDocument } from "pdf-lib";
 
 GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -38,7 +39,6 @@ export default function App() {
   const [provider, setProvider] = useState(loadStored("provider", "mock"));
   const [model, setModel] = useState(loadStored("model", ""));
   const [apiKey, setApiKey] = useState(loadStored("apiKey", ""));
-  const [useDocling, setUseDocling] = useState(true);
 
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [assistantText, setAssistantText] = useState("");
@@ -82,15 +82,25 @@ export default function App() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const buffer = await file.arrayBuffer();
-    const doc = await getDocument({ data: buffer }).promise;
+    try {
+      const buffer = await file.arrayBuffer();
+      const data = new Uint8Array(buffer);
+      const doc = await getDocument({ data }).promise;
+      const originalBytes = await doc.getData();
 
-    setPdfDoc(doc);
-    setPdfBytes(buffer);
-    setNumPages(doc.numPages);
-    setPageIndex(1);
-    setAssistantText("");
-    setAssistantStatus("Ready");
+      setPdfDoc(doc);
+      setPdfBytes(originalBytes);
+      setNumPages(doc.numPages || 0);
+      setPageIndex(1);
+      setAssistantText("");
+      setAssistantStatus("Ready");
+    } catch (error) {
+      console.error("Failed to open PDF", error);
+      setPdfDoc(null);
+      setPdfBytes(null);
+      setNumPages(0);
+      setAssistantStatus("Failed to load PDF.");
+    }
   };
 
   const nextPage = () => {
@@ -101,36 +111,62 @@ export default function App() {
     if (pageIndex > 1) setPageIndex((prev) => prev - 1);
   };
 
-  const handleExplain = async (customPrompt) => {
-    if (!pdfBytes || !canvasRef.current) return;
+  const buildSinglePagePdf = async (sourceBytes, pageNumber) => {
+    const normalizedBytes =
+      sourceBytes instanceof Uint8Array ? sourceBytes : new Uint8Array(sourceBytes);
+    const sourceDoc = await PDFDocument.load(normalizedBytes, { ignoreEncryption: true });
+    const newDoc = await PDFDocument.create();
+    const [copiedPage] = await newDoc.copyPages(sourceDoc, [pageNumber]);
+    newDoc.addPage(copiedPage);
+    return newDoc.save();
+  };
 
-    const canvas = canvasRef.current;
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  const handleExplain = async (customPrompt) => {
+    if (!pdfDoc) {
+      setAssistantStatus("Open a PDF first.");
+      return;
+    }
+    if (!pdfBytes) {
+      setAssistantStatus("Open a PDF first.");
+      return;
+    }
+
+    let pagePdfBytes;
+    try {
+      if (pageIndex < 1 || pageIndex > numPages) {
+        setAssistantStatus("Invalid page selection.");
+        return;
+      }
+      pagePdfBytes = await buildSinglePagePdf(pdfBytes, pageIndex - 1);
+    } catch (error) {
+      console.error("Failed to build page PDF", error);
+      setAssistantStatus("Could not prepare the page for analysis.");
+      return;
+    }
 
     const formData = new FormData();
-    formData.append("pdf_bytes", new Blob([pdfBytes], { type: "application/pdf" }), "document.pdf");
-    if (blob) {
-      formData.append("page_image", blob, `page-${pageIndex}.png`);
-    }
-    formData.append("page_index", String(pageIndex - 1));
+    formData.append(
+      "pdf_bytes",
+      new Blob([pagePdfBytes], { type: "application/pdf" }),
+      `page-${pageIndex}.pdf`
+    );
     formData.append("prompt", customPrompt || DEFAULT_PROMPT);
     formData.append("provider", provider);
     formData.append("model", model);
     formData.append("api_key", apiKey);
-    formData.append("use_docling", String(useDocling));
 
     setAssistantText("");
     setAssistantStatus("Thinking...");
     setIsStreaming(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/explain-page", {
+      const response = await fetch("http://localhost:8000/explain-page", {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok || !response.body) {
-        setAssistantStatus("Request failed.");
+        setAssistantStatus(`Request failed (${response.status}).`);
         setIsStreaming(false);
         return;
       }
@@ -157,6 +193,7 @@ export default function App() {
 
       setAssistantStatus("Done");
     } catch (error) {
+      console.error("Assistant request failed", error);
       setAssistantStatus("Connection error.");
     } finally {
       setIsStreaming(false);
@@ -258,14 +295,6 @@ export default function App() {
                   >
                     Help me understand this page
                   </button>
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={useDocling}
-                      onChange={(event) => setUseDocling(event.target.checked)}
-                    />
-                    Use docling parsing (fallback to page image)
-                  </label>
                 </div>
                 <div className="assistant-output">
                   <div className="status">Status: {assistantStatus}</div>

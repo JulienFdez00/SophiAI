@@ -1,8 +1,9 @@
-nodejs>=18
-npm>=9
+nodejs==25.2.1
+npm==11.6.2
 
 # Frontend packages (see frontend/package.json)
-react
-react-dom
-pdfjs-dist
-vite
+react==18.2.0
+react-dom==18.2.0
+pdfjs-dist==4.2.67
+pdf-lib==1.17.1
+vite==5.2.0
