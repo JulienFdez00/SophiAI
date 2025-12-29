@@ -1,0 +1,8 @@
+nodejs>=18
+npm>=9
+
+# Frontend packages (see frontend/package.json)
+react
+react-dom
+pdfjs-dist
+vite
