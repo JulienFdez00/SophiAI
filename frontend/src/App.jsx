@@ -174,6 +174,7 @@ export default function App() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let fullResponse = "";
 
       while (true) {
         const { value, done } = await reader.read();
@@ -183,14 +184,19 @@ export default function App() {
         buffer = events.pop() || "";
 
         for (const event of events) {
-          if (event.startsWith("data: ")) {
-            const data = event.replace(/^data: /, "");
-            if (data === "[DONE]") continue;
-            setAssistantText((prev) => prev + data);
-          }
+          const lines = event.split("\n");
+          const dataLines = lines
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => line.slice(6));
+          if (!dataLines.length) continue;
+          const data = dataLines.join("\n");
+          if (data === "[DONE]") continue;
+          setAssistantText((prev) => prev + data);
+          fullResponse += data;
         }
       }
 
+      console.log("Assistant full response:", fullResponse);
       setAssistantStatus("Done");
     } catch (error) {
       console.error("Assistant request failed", error);

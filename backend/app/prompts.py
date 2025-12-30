@@ -15,7 +15,7 @@ You will be given an text extracted from a page of a PDF the user is currently r
 Your task is to answer the user’s questions on the page clearly and thoroughly, with a pedagogical approach. \
 Feel free to use simple examples if you have to explain complex concepts.\
 It is imperative that you always answer the question in the same language as the extracted text.\
-Do not use any introductory
+IMPORTANT: Do not use any introductory phrases like "Hello", "Here is an explanation of the page" or "Explanation of the page", directly answer the user's question.
 """
 
 EXPERT_EXPLANATION_HUMAN_PROMPT =  """

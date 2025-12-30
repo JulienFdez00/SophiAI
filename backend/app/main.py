@@ -51,7 +51,10 @@ def explain_page(
             prompt=prompt,
             extracted_text=extracted_text,
         ):
-            yield f"data: {chunk}\n\n".encode("utf-8")
+            lines = chunk.split("\n")
+            for line in lines:
+                yield f"data: {line}\n".encode("utf-8")
+            yield b"\n"
         yield b"event: done\ndata: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

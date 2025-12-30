@@ -9,7 +9,7 @@ from io import BytesIO
 from typing import List
 
 import openai
-from backend.app.llm import get_llm
+from backend.app.llm import get_parsing_llm
 from backend.app.prompts import TEXT_EXTRACTION_PROMPT
 from langchain_core.messages import HumanMessage
 from pdf2image import convert_from_bytes
@@ -64,7 +64,7 @@ class PDFParser(Parser):
         image_in_memory: BytesIO,
     ) -> str:
         """Extract text from an image using tenacity for retry logic."""
-        model = get_llm()
+        model = get_parsing_llm()
         messages = []
         if not image_in_memory.getbuffer().nbytes > 0:
             LOGGER.debug("image is empty")
