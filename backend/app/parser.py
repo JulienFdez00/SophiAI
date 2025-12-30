@@ -9,12 +9,16 @@ from io import BytesIO
 from typing import List
 
 import openai
+import pymupdf
 from backend.app.llm import get_parsing_llm
 from backend.app.prompts import TEXT_EXTRACTION_PROMPT
+from docling.datamodel.base_models import DocumentStream, InputFormat
+from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
+from docling.document_converter import DocumentConverter, PdfFormatOption
 from langchain_core.messages import HumanMessage
 from pdf2image import convert_from_bytes
 
-from config.config import LOGGER
+from config.config import LOGGER, PARSER_MODE
 
 
 class Parser(ABC):
@@ -37,10 +41,41 @@ class PDFParser(Parser):
         1. Convert PDF page to image
         2. Extract text from image
         """
-        image_in_memory = self._convert_pdf_page_to_image(file_bytes)
-        content = self._extract_text_from_image(image_in_memory)
+        if PARSER_MODE == "Docling":
+            content = self._parse_with_docling(file_bytes)
+        else:
+            image_in_memory = self._convert_pdf_page_to_image(file_bytes)
+            content = self._extract_text_from_image(image_in_memory)
 
         return content
+    def _parse_with_docling(
+        self: PDFParser, file_bytes: bytes
+    ) -> str:
+        """Parse page with docling."""
+        pipeline_options = PdfPipelineOptions(do_table_structure=True)
+        pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE
+
+        pdf_document = pymupdf.Document(stream=file_bytes, filetype="pdf")
+        max_page = len(pdf_document)
+        extracted_pages = ""
+
+        for i in range(max_page):
+            single_page_pdf = pymupdf.open()
+            single_page_pdf.insert_pdf(pdf_document, from_page=i, to_page=i)
+            single_page_doc = single_page_pdf.tobytes(
+                no_new_id=True,
+                preserve_metadata=0,
+            )
+            converter = DocumentConverter(
+                format_options={
+                    InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options)
+                }
+            )
+            doc_stream = DocumentStream(name="doc", stream=BytesIO(single_page_doc))
+            result = converter.convert(doc_stream)
+            extracted_pages += result.document.export_to_markdown()
+        LOGGER.debug(f"extracted pages: {extracted_pages}")
+        return extracted_pages
 
     def _convert_pdf_page_to_image(
         self: PDFParser, file_bytes: bytes

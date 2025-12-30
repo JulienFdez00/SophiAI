@@ -14,3 +14,7 @@ load_dotenv(ROOT_PATH / ".env")
 LOGGER_LEVEL = logging.DEBUG
 
 LOGGER = setup_logger(logger_level=LOGGER_LEVEL)
+
+# Parsing type
+
+PARSER_MODE = "Docling"
