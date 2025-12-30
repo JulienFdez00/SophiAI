@@ -13,7 +13,7 @@ def get_llm(max_tokens: int = 4096) -> BaseChatModel:
     from config.config import LOGGER
     LOGGER.debug(f"ANTHROPIC_API_KEY is {masked}")
     return init_chat_model(
-        model="claude-sonnet-4-5",
+        model="claude-haiku-4-5",
         max_tokens=max_tokens,
         timeout=None,
         max_retries=2,

@@ -48,9 +48,6 @@ def explain_page(
 
     def event_stream() -> Generator[bytes, None, None]:
         for chunk in stream_explanation(
-            provider=provider,
-            model=model,
-            api_key=api_key,
             prompt=prompt,
             extracted_text=extracted_text,
         ):

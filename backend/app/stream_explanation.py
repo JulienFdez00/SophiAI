@@ -1,36 +1,25 @@
 from __future__ import annotations
 
-import time
 from typing import Generator, Optional
+
+from backend.app.chain import get_llm_explanation_chain
+from backend.app.llm import get_llm
+
+from config.config import LOGGER
 
 
 def stream_explanation(
-    *,
-    provider: str,
-    model: str,
-    api_key: str,
     prompt: str,
     extracted_text: Optional[str],
 ) -> Generator[str, None, None]:
-    if provider != "mock":
-        yield (
-            "Provider adapters are not wired yet. Set provider=mock for now, "
-            "or implement provider-specific calls in backend/app/llm.py."
-        )
-        return
 
-    context_hint = ""
-    if extracted_text:
-        context_hint = f"Using extracted text ({len(extracted_text)} chars)."
-    else:
-        context_hint = "No page content received."
+    model = get_llm()
+    chain = get_llm_explanation_chain(model)
+    LOGGER.debug(f"prompt: {prompt}")
+    response_chunks = []
+    for chunk in chain.stream({"parsed_page": extracted_text, "prompt": prompt}):
+        response_chunks.append(chunk)
+        yield chunk
 
-    response = (
-        f"{context_hint}\n\nPrompt: {prompt}\n\n"
-        "Mock explanation: This endpoint is ready to stream responses once "
-        "you wire a provider adapter."
-    )
-
-    for token in response.split(" "):
-        yield token + " "
-        time.sleep(0.02)
+    response = "".join(response_chunks)
+    LOGGER.debug("response: {}", response)
