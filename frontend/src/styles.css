@@ -11,14 +11,16 @@
 
 body {
   margin: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 #root {
-  min-height: 100vh;
+  height: 100%;
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
 }
@@ -84,12 +86,16 @@ body {
   grid-template-columns: 1fr auto;
   gap: 20px;
   padding: 24px;
+  align-items: stretch;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .viewer {
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  overflow: auto;
 }
 
 .canvas-shell {
@@ -125,13 +131,35 @@ body {
 }
 
 .assistant {
-  width: 340px;
+  position: relative;
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.92);
   border-radius: 16px;
   border: 1px solid rgba(15, 18, 25, 0.08);
   box-shadow: 0 18px 35px rgba(17, 22, 30, 0.12);
+  overflow: hidden;
+}
+
+.assistant-resizer {
+  position: absolute;
+  left: -8px;
+  top: 0;
+  bottom: 0;
+  width: 16px;
+  cursor: col-resize;
+  z-index: 3;
+}
+
+.assistant-resizer::after {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(15, 18, 25, 0.15);
 }
 
 .assistant-tabs {
@@ -158,6 +186,7 @@ body {
   flex-direction: column;
   gap: 14px;
   height: 100%;
+  overflow: hidden;
 }
 
 .assistant-controls {
@@ -222,10 +251,37 @@ body {
   overflow: auto;
 }
 
-.assistant-output pre {
-  white-space: pre-wrap;
+.assistant-markdown {
   font-family: "Iowan Old Style", "Palatino", serif;
-  margin: 0;
+  color: #1f2328;
+  line-height: 1.5;
+}
+
+.assistant-markdown h1,
+.assistant-markdown h2,
+.assistant-markdown h3 {
+  margin: 0.6em 0 0.3em;
+}
+
+.assistant-markdown p {
+  margin: 0.35em 0;
+}
+
+.assistant-markdown ul,
+.assistant-markdown ol {
+  margin: 0.35em 0 0.35em 1.25em;
+  padding: 0;
+}
+
+.assistant-markdown code {
+  background: rgba(15, 18, 25, 0.08);
+  padding: 0 4px;
+  border-radius: 6px;
+}
+
+.assistant-empty {
+  font-family: "Iowan Old Style", "Palatino", serif;
+  color: rgba(31, 35, 40, 0.7);
 }
 
 .status {

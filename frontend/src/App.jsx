@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { GlobalWorkerOptions, getDocument } from "pdfjs-dist";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { PDFDocument } from "pdf-lib";
@@ -35,6 +36,8 @@ export default function App() {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState("assistant");
+  const [sidebarWidth, setSidebarWidth] = useState(360);
+  const [isResizing, setIsResizing] = useState(false);
 
   const [provider, setProvider] = useState(loadStored("provider", "mock"));
   const [model, setModel] = useState(loadStored("model", ""));
@@ -206,6 +209,26 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMove = (event) => {
+      const nextWidth = Math.min(Math.max(window.innerWidth - event.clientX, 260), 520);
+      setSidebarWidth(nextWidth);
+    };
+
+    const handleUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [isResizing]);
+
   return (
     <div className="app-shell">
       <header className="toolbar">
@@ -267,7 +290,14 @@ export default function App() {
         </section>
 
         {sidebarOpen && (
-          <aside className="assistant">
+          <aside className="assistant" style={{ width: `${sidebarWidth}px` }}>
+            <div
+              className="assistant-resizer"
+              onMouseDown={() => setIsResizing(true)}
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize assistant panel"
+            />
             <div className="assistant-tabs">
               <button
                 className={sidebarTab === "assistant" ? "tab active" : "tab"}
@@ -304,7 +334,15 @@ export default function App() {
                 </div>
                 <div className="assistant-output">
                   <div className="status">Status: {assistantStatus}</div>
-                  <pre>{assistantText || "Awaiting your prompt."}</pre>
+                  {assistantText ? (
+                    <div className="assistant-markdown">
+                      <ReactMarkdown>{assistantText}</ReactMarkdown>
+                    </div>
+                  ) : isStreaming ? (
+                    <div className="assistant-empty">Thinking...</div>
+                  ) : (
+                    <div className="assistant-empty">Awaiting your prompt.</div>
+                  )}
                 </div>
               </div>
             ) : (
