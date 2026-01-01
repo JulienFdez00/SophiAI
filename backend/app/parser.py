@@ -18,7 +18,7 @@ from pdf2image import convert_from_bytes
 
 from backend.app.llm import get_parsing_llm
 from backend.app.prompts import TEXT_EXTRACTION_PROMPT
-from config.config import LOGGER, PARSER_MODE
+from config.config import LOGGER
 
 
 class Parser(ABC):
@@ -32,21 +32,22 @@ class Parser(ABC):
 class PDFParser(Parser):
     """Parse PDF page."""
 
-    def parse_document(
-        self: PDFParser,
-        file_bytes: bytes,
-    ) -> str:
+    def parse_document(self: PDFParser, file_bytes: bytes, parse_with_llm: bool = False) -> str:
         """Use a multimodal LLM to parse a PDF document and extract the content.
 
-        Workflow:
+        Workflow if LLM parsing:
         1. Convert PDF page to image
         2. Extract text from image
+
+        Otherwise parse with docling.
         """
-        if PARSER_MODE == "Docling":
-            content = self._parse_with_docling(file_bytes)
-        else:
+        if parse_with_llm:
+            LOGGER.debug("Parsing with LLM")
             image_in_memory = self._convert_pdf_page_to_image(file_bytes)
             content = self._extract_text_from_image(image_in_memory)
+        else:
+            LOGGER.debug("Parsing with docling")
+            content = self._parse_with_docling(file_bytes)
 
         return content
 

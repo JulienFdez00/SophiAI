@@ -203,6 +203,13 @@ body {
   font-weight: 600;
 }
 
+.optional {
+  font-weight: 500;
+  color: rgba(15, 18, 25, 0.55);
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
 .control textarea,
 .control input,
 .control select {
@@ -240,6 +247,48 @@ body {
   align-items: center;
   gap: 8px;
   font-size: 0.8rem;
+}
+
+.info-bubble {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 18, 25, 0.25);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(15, 18, 25, 0.7);
+  cursor: help;
+  background: rgba(255, 255, 255, 0.6);
+  position: relative;
+}
+
+.info-bubble::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: 220px;
+  background: #1f2430;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 10px 20px rgba(15, 18, 25, 0.2);
+  z-index: 5;
+}
+
+.info-bubble:hover::after,
+.info-bubble:focus::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .assistant-output {
@@ -288,6 +337,11 @@ body {
   font-size: 0.75rem;
   color: rgba(15, 18, 25, 0.6);
   margin-bottom: 8px;
+}
+
+.status-error {
+  color: #b42318;
+  font-weight: 700;
 }
 
 .hint {

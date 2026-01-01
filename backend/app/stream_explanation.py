@@ -22,4 +22,4 @@ def stream_explanation(
         yield chunk
 
     response = "".join(response_chunks)
-    LOGGER.debug("response: {}", response)
+    LOGGER.debug(f"response: {response}")

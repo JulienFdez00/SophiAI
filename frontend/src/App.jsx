@@ -39,14 +39,18 @@ export default function App() {
   const [sidebarWidth, setSidebarWidth] = useState(360);
   const [isResizing, setIsResizing] = useState(false);
 
-  const [provider, setProvider] = useState(loadStored("provider", "mock"));
+  const [provider, setProvider] = useState(loadStored("provider", "anthropic"));
   const [model, setModel] = useState(loadStored("model", ""));
-  const [apiKey, setApiKey] = useState(loadStored("apiKey", ""));
+  const [parsingModel, setParsingModel] = useState(loadStored("parsingModel", ""));
+  const [apiKey, setApiKey] = useState("");
 
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [assistantText, setAssistantText] = useState("");
   const [assistantStatus, setAssistantStatus] = useState("Idle");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [keyStatus, setKeyStatus] = useState("");
+  const [parseWithLlm, setParseWithLlm] = useState(false);
+  const [assistantError, setAssistantError] = useState(false);
 
   useEffect(() => {
     saveStored("provider", provider);
@@ -57,8 +61,8 @@ export default function App() {
   }, [model]);
 
   useEffect(() => {
-    saveStored("apiKey", apiKey);
-  }, [apiKey]);
+    saveStored("parsingModel", parsingModel);
+  }, [parsingModel]);
 
   const canPaginate = useMemo(() => numPages > 0, [numPages]);
 
@@ -154,12 +158,11 @@ export default function App() {
       `page-${pageIndex}.pdf`
     );
     formData.append("prompt", customPrompt || DEFAULT_PROMPT);
-    formData.append("provider", provider);
-    formData.append("model", model);
-    formData.append("api_key", apiKey);
+    formData.append("parse_with_llm", String(parseWithLlm));
 
     setAssistantText("");
     setAssistantStatus("Thinking...");
+    setAssistantError(false);
     setIsStreaming(true);
 
     try {
@@ -169,7 +172,18 @@ export default function App() {
       });
 
       if (!response.ok || !response.body) {
-        setAssistantStatus(`Request failed (${response.status}).`);
+        const errorBody = await response.json().catch(() => null);
+        const errorText = errorBody?.detail
+          ? String(errorBody.detail)
+          : await response.text().catch(() => "");
+        const detailRaw = errorText || `Request failed (${response.status}).`;
+        const detail = detailRaw.replaceAll(
+          "Set it via /add-llm-keys.",
+          'Set it via "API Keys".'
+        );
+        setAssistantText("");
+        setAssistantStatus(detail);
+        setAssistantError(true);
         setIsStreaming(false);
         return;
       }
@@ -188,12 +202,23 @@ export default function App() {
 
         for (const event of events) {
           const lines = event.split("\n");
+          const isError = lines.some((line) => line.startsWith("event: error"));
           const dataLines = lines
             .filter((line) => line.startsWith("data: "))
             .map((line) => line.slice(6));
           if (!dataLines.length) continue;
           const data = dataLines.join("\n");
           if (data === "[DONE]") continue;
+          if (isError) {
+            const detail = data.replaceAll(
+              "Set it via /add-llm-keys.",
+              'Set it via "API Keys".'
+            );
+            setAssistantStatus(detail);
+            setAssistantError(true);
+            setIsStreaming(false);
+            return;
+          }
           setAssistantText((prev) => prev + data);
           fullResponse += data;
         }
@@ -204,8 +229,41 @@ export default function App() {
     } catch (error) {
       console.error("Assistant request failed", error);
       setAssistantStatus("Connection error.");
+      setAssistantError(true);
     } finally {
       setIsStreaming(false);
+    }
+  };
+
+  const handleSaveKeys = async () => {
+    setKeyStatus("");
+    if (!apiKey) {
+      setKeyStatus("API key is required.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:8000/add-llm-keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider,
+          api_key: apiKey,
+          expert_model: model || null,
+          parsing_model: parsingModel || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setKeyStatus(errorBody.detail || "Failed to save credentials.");
+        return;
+      }
+
+      setKeyStatus("Credentials saved to keychain.");
+    } catch (error) {
+      console.error("Failed to save credentials", error);
+      setKeyStatus("Connection error.");
     }
   };
 
@@ -324,6 +382,21 @@ export default function App() {
                       placeholder={DEFAULT_PROMPT}
                     />
                   </label>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={parseWithLlm}
+                      onChange={(event) => setParseWithLlm(event.target.checked)}
+                    />
+                    Parse with LLM
+                    <span
+                      className="info-bubble"
+                      data-tooltip="Can perform better with scanned pages but more expensive."
+                      aria-label="Can perform better with scanned pages but more expensive."
+                    >
+                      i
+                    </span>
+                  </label>
                   <button
                     className="primary"
                     onClick={() => handleExplain(prompt)}
@@ -333,7 +406,9 @@ export default function App() {
                   </button>
                 </div>
                 <div className="assistant-output">
-                  <div className="status">Status: {assistantStatus}</div>
+                  <div className={assistantError ? "status status-error" : "status"}>
+                    Status: {assistantStatus}
+                  </div>
                   {assistantText ? (
                     <div className="assistant-markdown">
                       <ReactMarkdown>{assistantText}</ReactMarkdown>
@@ -350,10 +425,8 @@ export default function App() {
                 <label className="control">
                   Provider
                   <select value={provider} onChange={(event) => setProvider(event.target.value)}>
-                    <option value="mock">Mock</option>
                     <option value="openai">OpenAI</option>
-                    <option value="anthropic">Claude (Anthropic)</option>
-                    <option value="mistral">Mistral</option>
+                    <option value="anthropic">Anthropic</option>
                     <option value="gemini">Gemini</option>
                   </select>
                 </label>
@@ -363,7 +436,16 @@ export default function App() {
                     type="text"
                     value={model}
                     onChange={(event) => setModel(event.target.value)}
-                    placeholder="gpt-4o-mini"
+                    placeholder="claude-sonnet-4-5"
+                  />
+                </label>
+                <label className="control">
+                  Parsing Model <span className="optional">(optional)</span>
+                  <input
+                    type="text"
+                    value={parsingModel}
+                    onChange={(event) => setParsingModel(event.target.value)}
+                    placeholder="claude-haiku-4-5"
                   />
                 </label>
                 <label className="control">
@@ -375,8 +457,12 @@ export default function App() {
                     placeholder="sk-..."
                   />
                 </label>
+                <button className="primary" onClick={handleSaveKeys}>
+                  Save Credentials
+                </button>
+                {keyStatus && <div className="hint">{keyStatus}</div>}
                 <div className="hint">
-                  Keys stay local in your browser storage and are sent only with your requests.
+                  Keys are stored securely in your local keychain when you save them.
                 </div>
               </div>
             )}

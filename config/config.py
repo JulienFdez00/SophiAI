@@ -18,3 +18,6 @@ LOGGER = setup_logger(logger_level=LOGGER_LEVEL)
 
 # Parsing type
 PARSER_MODE = "Docling"
+
+# Model Providers
+ALLOWED_PROVIDERS = {"openai", "anthropic", "gemini"}
