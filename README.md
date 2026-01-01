@@ -8,7 +8,7 @@ An AI reading assistant I am semi-vibe coding. For when you want to ask question
 - API key tab stored locally in your OS keychain
 - Default action: "help me understand this page"
 - Backend FastAPI endpoint that streams responses
-- Sends only the current page as a single-page PDF
+- Currently only sends the current page as a single-page PDF
 
 ## Project Structure
 - `backend/`: FastAPI API
