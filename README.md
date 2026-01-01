@@ -5,7 +5,7 @@ A Preview-inspired PDF reader with an AI assistant sidebar. Open any local PDF, 
 ## Features
 - Preview-like viewer with page navigation and zoom
 - AI assistant sidebar that can be toggled on/off
-- API key tab for OpenAI/Claude/Mistral/Gemini (model-agnostic settings)
+- API key tab stored locally in your OS keychain
 - Default action: "help me understand this page"
 - Backend FastAPI endpoint that streams responses
 - Sends only the current page as a single-page PDF
@@ -53,9 +53,14 @@ make run_frontend
 Multipart form fields:
 - `pdf_bytes` (file): single-page PDF bytes
 - `prompt` (string): optional prompt
-- `provider` (string): mock/openai/anthropic/mistral/gemini
-- `model` (string): model name
+
+`POST /add-llm-keys`
+
+JSON body:
+- `provider` (string): openai/anthropic/mistral/gemini
 - `api_key` (string): provider key
+- `expert_model` (string, optional): model for explanations
+- `parsing_model` (string, optional): model for parsing
 
 The endpoint returns an event-stream (SSE). Each chunk is in `data: ...` lines and terminates with `[DONE]`.
 

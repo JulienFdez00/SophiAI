@@ -203,6 +203,13 @@ body {
   font-weight: 600;
 }
 
+.optional {
+  font-weight: 500;
+  color: rgba(15, 18, 25, 0.55);
+  font-size: 0.8rem;
+  margin-left: 6px;
+}
+
 .control textarea,
 .control input,
 .control select {
