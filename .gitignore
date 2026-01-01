@@ -156,3 +156,6 @@ pnpm-debug.log*
 
 # OS/editor noise
 .idea/
+
+# Node modules
+frontend/node_modules/
