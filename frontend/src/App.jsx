@@ -49,6 +49,8 @@ export default function App() {
   const [assistantStatus, setAssistantStatus] = useState("Idle");
   const [isStreaming, setIsStreaming] = useState(false);
   const [keyStatus, setKeyStatus] = useState("");
+  const [parseWithLlm, setParseWithLlm] = useState(false);
+  const [assistantError, setAssistantError] = useState(false);
 
   useEffect(() => {
     saveStored("provider", provider);
@@ -156,9 +158,11 @@ export default function App() {
       `page-${pageIndex}.pdf`
     );
     formData.append("prompt", customPrompt || DEFAULT_PROMPT);
+    formData.append("parse_with_llm", String(parseWithLlm));
 
     setAssistantText("");
     setAssistantStatus("Thinking...");
+    setAssistantError(false);
     setIsStreaming(true);
 
     try {
@@ -168,7 +172,18 @@ export default function App() {
       });
 
       if (!response.ok || !response.body) {
-        setAssistantStatus(`Request failed (${response.status}).`);
+        const errorBody = await response.json().catch(() => null);
+        const errorText = errorBody?.detail
+          ? String(errorBody.detail)
+          : await response.text().catch(() => "");
+        const detailRaw = errorText || `Request failed (${response.status}).`;
+        const detail = detailRaw.replaceAll(
+          "Set it via /add-llm-keys.",
+          'Set it via "API Keys".'
+        );
+        setAssistantText("");
+        setAssistantStatus(detail);
+        setAssistantError(true);
         setIsStreaming(false);
         return;
       }
@@ -187,12 +202,23 @@ export default function App() {
 
         for (const event of events) {
           const lines = event.split("\n");
+          const isError = lines.some((line) => line.startsWith("event: error"));
           const dataLines = lines
             .filter((line) => line.startsWith("data: "))
             .map((line) => line.slice(6));
           if (!dataLines.length) continue;
           const data = dataLines.join("\n");
           if (data === "[DONE]") continue;
+          if (isError) {
+            const detail = data.replaceAll(
+              "Set it via /add-llm-keys.",
+              'Set it via "API Keys".'
+            );
+            setAssistantStatus(detail);
+            setAssistantError(true);
+            setIsStreaming(false);
+            return;
+          }
           setAssistantText((prev) => prev + data);
           fullResponse += data;
         }
@@ -203,6 +229,7 @@ export default function App() {
     } catch (error) {
       console.error("Assistant request failed", error);
       setAssistantStatus("Connection error.");
+      setAssistantError(true);
     } finally {
       setIsStreaming(false);
     }
@@ -355,6 +382,21 @@ export default function App() {
                       placeholder={DEFAULT_PROMPT}
                     />
                   </label>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={parseWithLlm}
+                      onChange={(event) => setParseWithLlm(event.target.checked)}
+                    />
+                    Parse with LLM
+                    <span
+                      className="info-bubble"
+                      data-tooltip="Can perform better with scanned pages but more expensive."
+                      aria-label="Can perform better with scanned pages but more expensive."
+                    >
+                      i
+                    </span>
+                  </label>
                   <button
                     className="primary"
                     onClick={() => handleExplain(prompt)}
@@ -364,7 +406,9 @@ export default function App() {
                   </button>
                 </div>
                 <div className="assistant-output">
-                  <div className="status">Status: {assistantStatus}</div>
+                  <div className={assistantError ? "status status-error" : "status"}>
+                    Status: {assistantStatus}
+                  </div>
                   {assistantText ? (
                     <div className="assistant-markdown">
                       <ReactMarkdown>{assistantText}</ReactMarkdown>

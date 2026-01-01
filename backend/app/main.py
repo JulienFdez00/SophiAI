@@ -82,12 +82,21 @@ def add_llm_keys(payload: LlmKeysRequest) -> dict:
 def explain_page(
     pdf_bytes: UploadFile = File(...),
     prompt: str = Form("help me understand this page"),
+    parse_with_llm: bool = Form(False),
 ) -> StreamingResponse:
     pdf_data = pdf_bytes.file.read()
     LOGGER.debug("Received PDF bytes: %d", len(pdf_data))
+    try:
+        get_expert_llm()
+        if parse_with_llm:
+            get_parsing_llm()
+    except Exception as exc:
+        LOGGER.exception(f"LLM validation failed: {exc}")
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     parser = PDFParser()
     try:
-        extracted_text = parser.parse_document(pdf_data)
+        extracted_text = parser.parse_document(pdf_data, parse_with_llm)
         LOGGER.debug(f"Extracted text length: {len(extracted_text)}")
         LOGGER.debug(f"Extracted text: {extracted_text}")
     except Exception as exc:
@@ -95,14 +104,19 @@ def explain_page(
         extracted_text = ""
 
     def event_stream() -> Generator[bytes, None, None]:
-        for chunk in stream_explanation(
-            prompt=prompt,
-            extracted_text=extracted_text,
-        ):
-            lines = chunk.split("\n")
-            for line in lines:
-                yield f"data: {line}\n".encode("utf-8")
-            yield b"\n"
-        yield b"event: done\ndata: [DONE]\n\n"
+        try:
+            for chunk in stream_explanation(
+                prompt=prompt,
+                extracted_text=extracted_text,
+            ):
+                lines = chunk.split("\n")
+                for line in lines:
+                    yield f"data: {line}\n".encode("utf-8")
+                yield b"\n"
+        except Exception as exc:
+            LOGGER.exception("Streaming failed: {}", exc)
+            yield f"event: error\ndata: {exc}\n\n".encode("utf-8")
+        finally:
+            yield b"event: done\ndata: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
