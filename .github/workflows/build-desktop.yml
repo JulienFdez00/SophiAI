@@ -30,11 +30,11 @@ jobs:
 
       - name: Build macOS package
         if: matrix.os == 'macos-latest'
-        run: npm run electron:package -- --mac
+        run: npm run electron:package -- --mac --publish=never
 
       - name: Build Windows package
         if: matrix.os == 'windows-latest'
-        run: npm run electron:package -- --win
+        run: npm run electron:package -- --win --publish=never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
