@@ -63,6 +63,7 @@ npm run electron:package
 Notes:
 - The Electron app launches the FastAPI backend in the background.
 - The frontend build is loaded from `frontend/dist`.
+- The packaged app requires Python 3 installed on the user's machine.
 
 ## API
 `POST /explain-page`
@@ -70,16 +71,14 @@ Notes:
 Multipart form fields:
 - `pdf_bytes` (file): single-page PDF bytes
 - `prompt` (string): optional prompt
+- `parse_with_llm` (bool): optional flag to parse via LLM
 
 `POST /add-llm-keys`
 
 JSON body:
 - `provider` (string): openai/anthropic/gemini (for now)
 - `api_key` (string): provider key
-- `expert_model` (string, optional): model for explanations
+- `expert_model` (string, required): model for explanations
 - `parsing_model` (string, optional): model for parsing
 
 The endpoint returns an event-stream (SSE). Each chunk is in `data: ...` lines and terminates with `[DONE]`.
-
-## Notes
-- `backend/app/llm.py` currently includes a mock provider. Wire your preferred provider there.
