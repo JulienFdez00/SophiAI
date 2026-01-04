@@ -63,7 +63,25 @@ npm run electron:package
 Notes:
 - The Electron app launches the FastAPI backend in the background.
 - The frontend build is loaded from `frontend/dist`.
-- The packaged app requires Python 3 installed on the user's machine.
+- The packaged app can use a bundled Python runtime (see below).
+
+## Bundling Python (optional but recommended for non-technical users)
+
+To avoid requiring users to install Python, bundle a local Python runtime:
+
+```bash
+./bin/bundle_python.sh
+npm run electron:package
+```
+
+This script creates `vendor/python/venv` and installs backend dependencies into it.
+
+Windows (PowerShell):
+
+```powershell
+.\bin\bundle_python.ps1
+npm run electron:package -- --win
+```
 
 ## API
 `POST /explain-page`

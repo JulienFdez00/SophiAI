@@ -20,6 +20,7 @@
       "electron/**",
       "backend/**",
       "frontend/dist/**",
+      "vendor/python/**",
       "config/**",
       "requirements-backend.txt",
       "pyproject.toml"
@@ -29,7 +30,8 @@
     },
     "asarUnpack": [
       "backend/**",
-      "config/**"
+      "config/**",
+      "vendor/python/**"
     ]
   },
   "version": "0.1.0",

@@ -8,10 +8,24 @@ let backendProcess;
 const BACKEND_PORT = process.env.BACKEND_PORT || "8000";
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1";
 
-const resolvePythonBin = () => {
+const resolvePythonBin = (isPackaged) => {
   const envPython = process.env.PYTHON_BIN;
   if (envPython && fs.existsSync(envPython)) {
     return envPython;
+  }
+
+  if (isPackaged) {
+    const bundledRoot = path.join(process.resourcesPath, "app.asar.unpacked", "vendor", "python");
+    const candidates = [
+      path.join(bundledRoot, "venv", "bin", "python3"),
+      path.join(bundledRoot, "venv", "bin", "python"),
+      path.join(bundledRoot, "venv", "Scripts", "python.exe"),
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
+    }
   }
 
   const candidates = ["python3", "python"];
@@ -26,7 +40,7 @@ const resolvePythonBin = () => {
 };
 
 const startBackend = () => {
-  const pythonBin = resolvePythonBin();
+  const pythonBin = resolvePythonBin(isPackaged);
   if (!pythonBin) {
     dialog.showErrorBox(
       "Python not found",

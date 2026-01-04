@@ -141,6 +141,9 @@ secrets/*
 data/*
 .qodo
 
+# Bundled runtimes
+vendor/
+
 # Node / frontend
 frontend/node_modules/
 frontend/dist/
@@ -162,4 +165,3 @@ pnpm-debug.log*
 # Electron build outputs
 release/
 out/
-
