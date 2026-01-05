@@ -1,6 +1,7 @@
 :root {
   color-scheme: light;
   font-family: "Avenir Next", "Avenir", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 15px;
   background: linear-gradient(160deg, #f5f3ef 0%, #e7edf5 60%, #fdfaf6 100%);
   color: #1f2328;
 }
@@ -127,7 +128,7 @@ body {
 
 .empty-state h2 {
   margin: 0 0 8px;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
 }
 
 .assistant {
@@ -309,7 +310,8 @@ body {
 .assistant-markdown h1,
 .assistant-markdown h2,
 .assistant-markdown h3 {
-  margin: 0.6em 0 0.3em;
+  margin: 0.5em 0 0.25em;
+  font-size: 1.05rem;
 }
 
 .assistant-markdown p {
