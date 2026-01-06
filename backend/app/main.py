@@ -9,6 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from backend.app.conversation_history import (
+    delete_conversation_history,
+    get_conversation_history,
+)
 from backend.app.credentials import set_llm_credentials
 from backend.app.llm import get_expert_llm, get_parsing_llm
 from backend.app.parser import PDFParser
@@ -83,6 +87,7 @@ def explain_page(
     pdf_bytes: UploadFile = File(...),
     prompt: str = Form("help me understand this page"),
     parse_with_llm: bool = Form(False),
+    follow_up: bool = Form(False),
 ) -> StreamingResponse:
     pdf_data = pdf_bytes.file.read()
     LOGGER.debug(f"Received PDF bytes: {len(pdf_data)}")
@@ -105,11 +110,18 @@ def explain_page(
         LOGGER.error(message)
         raise HTTPException(status_code=400, detail=message) from exc
 
+    if follow_up:
+        conversation_history = get_conversation_history()
+    else:
+        delete_conversation_history()
+        conversation_history = ""
+
     def event_stream() -> Generator[bytes, None, None]:
         try:
             for chunk in stream_explanation(
                 prompt=prompt,
                 extracted_text=extracted_text,
+                conversation_history=conversation_history,
             ):
                 lines = chunk.split("\n")
                 for line in lines:

@@ -16,6 +16,11 @@ export default function AssistantSidebar({
   assistantError,
   parseWithLlm,
   onToggleParseWithLlm,
+  followUpPrompt,
+  onFollowUpChange,
+  onFollowUpSubmit,
+  showFollowUp,
+  followUpMessages,
   provider,
   onProviderChange,
   model,
@@ -65,6 +70,11 @@ export default function AssistantSidebar({
           assistantError={assistantError}
           parseWithLlm={parseWithLlm}
           onToggleParseWithLlm={onToggleParseWithLlm}
+          followUpPrompt={followUpPrompt}
+          onFollowUpChange={onFollowUpChange}
+          onFollowUpSubmit={onFollowUpSubmit}
+          showFollowUp={showFollowUp}
+          followUpMessages={followUpMessages}
         />
       ) : (
         <ApiKeysPanel

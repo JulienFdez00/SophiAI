@@ -52,6 +52,9 @@ export default function App() {
   const [keyStatus, setKeyStatus] = useState("");
   const [parseWithLlm, setParseWithLlm] = useState(false);
   const [assistantError, setAssistantError] = useState(false);
+  const [followUpPrompt, setFollowUpPrompt] = useState("");
+  const [hasResponse, setHasResponse] = useState(false);
+  const [followUpMessages, setFollowUpMessages] = useState([]);
 
   useEffect(() => {
     saveStored("provider", provider);
@@ -129,7 +132,8 @@ export default function App() {
     return newDoc.save();
   };
 
-  const handleExplain = async (customPrompt) => {
+  const handleExplain = async (customPrompt, isFollowUp = false) => {
+    if (!customPrompt.trim()) return;
     if (!pdfDoc || !pdfBytes) {
       setAssistantStatus("Open a PDF first.");
       return;
@@ -156,11 +160,23 @@ export default function App() {
     );
     formData.append("prompt", customPrompt || DEFAULT_PROMPT);
     formData.append("parse_with_llm", String(parseWithLlm));
+    formData.append("follow_up", String(isFollowUp));
 
-    setAssistantText("");
+    if (!isFollowUp) {
+      setAssistantText("");
+      setHasResponse(false);
+      setFollowUpMessages([]);
+    }
     setAssistantStatus("Thinking...");
     setAssistantError(false);
     setIsStreaming(true);
+
+    if (isFollowUp) {
+      setFollowUpMessages((prev) => [
+        ...prev,
+        { id: `${Date.now()}-q`, type: "question", text: customPrompt },
+      ]);
+    }
 
     try {
       const response = await fetch("http://localhost:8000/explain-page", {
@@ -216,13 +232,27 @@ export default function App() {
             setIsStreaming(false);
             return;
           }
-          setAssistantText((prev) => prev + data);
+          if (isFollowUp) {
+            setFollowUpMessages((prev) => {
+              const next = [...prev];
+              const last = next[next.length - 1];
+              if (last && last.type === "answer") {
+                last.text += data;
+              } else {
+                next.push({ id: `${Date.now()}-a`, type: "answer", text: data });
+              }
+              return next;
+            });
+          } else {
+            setAssistantText((prev) => prev + data);
+          }
           fullResponse += data;
         }
       }
 
       console.log("Assistant full response:", fullResponse);
       setAssistantStatus("Done");
+      setHasResponse(true);
     } catch (error) {
       console.error("Assistant request failed", error);
       setAssistantStatus("Connection error.");
@@ -316,6 +346,16 @@ export default function App() {
             assistantError={assistantError}
             parseWithLlm={parseWithLlm}
             onToggleParseWithLlm={(event) => setParseWithLlm(event.target.checked)}
+            followUpPrompt={followUpPrompt}
+            onFollowUpChange={(event) => setFollowUpPrompt(event.target.value)}
+            onFollowUpSubmit={() => {
+              if (!followUpPrompt.trim()) return;
+              const question = followUpPrompt.trim();
+              setFollowUpPrompt("");
+              handleExplain(question, true);
+            }}
+            showFollowUp={hasResponse}
+            followUpMessages={followUpMessages}
             provider={provider}
             onProviderChange={(event) => setProvider(event.target.value)}
             model={model}

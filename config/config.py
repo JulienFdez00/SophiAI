@@ -24,3 +24,7 @@ ALLOWED_PROVIDERS = {"openai", "anthropic", "gemini"}
 
 # Logging
 LOG_PREVIEW_CHARS = 64
+
+# Conversation history storage
+DATA_DIR = ROOT_PATH / "data"
+CONVERSATION_HISTORY_PATH = DATA_DIR / "conversation_history.md"
