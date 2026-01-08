@@ -3,12 +3,12 @@
 An AI reading assistant I am currently building. Ask precise questions and get clear explanations page-by-page while reading complex texts. Initally got inspired to build this while attempting to read Hegel's Logic. Built for PDFs.
 
 ## Features
+- Ask questions about the current page and get streaming answers
 - Preview-like viewer with page navigation and zoom
 - AI assistant sidebar that can be toggled on/off
 - API key tab stored locally in your OS keychain
-- Default action: "help me understand this page"
-- Backend FastAPI endpoint that streams responses
-- Currently only sends the current page as a single-page PDF
+
+Currently only sends the current page as a single-page PDF
 
 ## Project Structure
 - `backend/`: FastAPI API
@@ -22,14 +22,12 @@ An AI reading assistant I am currently building. Ask precise questions and get c
 ### Make targets
 ```bash
 make install
-make backend-run
-make frontend-run
-
-make run_backend
-make run_frontend
+make dev
 ```
 
 Open `http://localhost:5173`.
+
+Alternatively, you can run `make backend-run` and `make frontend-run` in two separate terminals.
 
 ## Desktop (Electron)
 

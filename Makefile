@@ -1,4 +1,4 @@
-.PHONY: backend-install backend-run frontend-install frontend-run dev run_backend run_frontend install
+.PHONY: backend-install backend-run frontend-install frontend-run dev install install_precommit
 
 export PYTHONPATH := .
 
@@ -17,18 +17,11 @@ frontend-install:
 frontend-run:
 	cd frontend && npm run dev
 
+dev:
+	@command -v concurrently >/dev/null 2>&1 || { echo "Missing concurrently (npm i -g concurrently)"; exit 1; }
+	@concurrently "make backend-run" "make frontend-run"
+
 install_precommit: ## To install pre-commit hooks > make install_precommit
 	@echo "Installing pre-commit hooks"
 	@pre-commit install -t pre-commit
 	@pre-commit install -t pre-push
-
-run_backend:
-	@python backend/main.py
-
-run_frontend:
-	@cd frontend && npm run dev
-
-dev:
-	@echo "Run backend and frontend in separate terminals:"
-	@echo "  make backend-run"
-	@echo "  make frontend-run"
