@@ -1,6 +1,13 @@
 # SophiAI
 
-An AI reading assistant I am currently building. Ask precise questions and get clear explanations page-by-page while reading complex texts. Initally got inspired to build this while attempting to read Hegel's Logic. Built for PDFs.
+An AI reading assistant I am currently building. Ask precise questions and get clear explanations page-by-page while reading complex texts. Built for PDFs.
+
+## Why I'm building this
+
+Initally got inspired to build this while attempting to read Hegel's Logic. Not-quite-translatable abstract German concepts that make no sense to you? Random latin phrases that you are just expected to understand? Surprise references to obscure pre-Socratic philosophers? Good news! You no longer need to forth between your reading and ChatGPT.
+
+## Demo
+<video src="media/sophiai_demo.mp4" controls width="800"></video>
 
 ## Features
 - Ask questions about the current page and get streaming answers
@@ -61,9 +68,9 @@ Notes:
 - The frontend build is loaded from `frontend/dist`.
 - The packaged app can use a bundled Python runtime (see below).
 
-## Bundling Python (optional but recommended for non-technical users)
+## Bundling Python
 
-To avoid requiring users to install Python, bundle a local Python runtime:
+To avoid requiring end users to install Python, bundle a local Python runtime during the build (the build machine still needs Python installed):
 
 ```bash
 ./bin/bundle_python.sh
