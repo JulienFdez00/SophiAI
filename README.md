@@ -7,7 +7,7 @@ An AI reading assistant I am currently building. Ask precise questions and get c
 Initally got inspired to build this while attempting to read Hegel's Logic. Not-quite-translatable abstract German concepts that make no sense to you? Random latin phrases that you are just expected to understand? Surprise references to obscure pre-Socratic philosophers? Good news! You no longer need to forth between your reading and ChatGPT.
 
 ## Demo
-<video src="media/sophiai_demo.mp4" controls width="800"></video>
+![SophiAI demo](media/sophiai_demo.gif)
 
 ## Features
 - Ask questions about the current page and get streaming answers
