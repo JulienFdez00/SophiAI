@@ -1,6 +1,13 @@
 # SophiAI
 
-An AI reading assistant I am currently building. Ask precise questions and get clear explanations page-by-page while reading complex texts. Initally got inspired to build this while attempting to read Hegel's Logic. Built for PDFs.
+An AI reading assistant I am currently building. Ask precise questions and get clear explanations page-by-page while reading complex texts. Built for PDFs.
+
+## Why I'm building this
+
+Initally got inspired to build this while attempting to read Hegel's Logic. Not-quite-translatable abstract German concepts that make no sense to you? Random latin phrases that you are just expected to understand? Surprise references to obscure pre-Socratic philosophers? Good news! You no longer need to forth between your reading and ChatGPT.
+
+## Demo
+<video src="media/sophiai_demo.mp4" controls width="800"></video>
 
 ## Features
 - Ask questions about the current page and get streaming answers
@@ -29,6 +36,20 @@ Open `http://localhost:5173`.
 
 Alternatively, you can run `make backend-run` and `make frontend-run` in two separate terminals.
 
+If you don’t have `make` (for example on Windows), run:
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements-backend.txt
+uvicorn backend.app.main:app --reload --port 8000
+```
+Then in a second terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
 ## Desktop (Electron)
 
 ### Dev mode
@@ -47,9 +68,9 @@ Notes:
 - The frontend build is loaded from `frontend/dist`.
 - The packaged app can use a bundled Python runtime (see below).
 
-## Bundling Python (optional but recommended for non-technical users)
+## Bundling Python
 
-To avoid requiring users to install Python, bundle a local Python runtime:
+To avoid requiring end users to install Python, bundle a local Python runtime during the build (the build machine still needs Python installed):
 
 ```bash
 ./bin/bundle_python.sh

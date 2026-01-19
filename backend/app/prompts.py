@@ -21,9 +21,17 @@ Do not use any introductory phrases like "Hello", "Here is an explanation of the
 """
 
 EXPERT_EXPLANATION_HUMAN_PROMPT = """
-Here is the extracted tex from the PDF page: {parsed_page} \
+Here is the extracted text from the PDF page:
 
-Conversation history: {conversation_history} \
+<Extracted page>
+{parsed_page}
+</Extracted page>
+
+Use the information from the page and the conversation history below to answer the user's question.
+
+<Conversation history>
+{conversation_history}
+</Conversation history>
 
 Here is the user's question : {prompt}
 """
